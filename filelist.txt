@@ -1,0 +1,5 @@
+blmfire.py
+updatefirepage.sh
+updateblmdata.py
+templates/current_fires_template.js
+templates/firetemplate.js
