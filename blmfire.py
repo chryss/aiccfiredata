@@ -53,37 +53,30 @@ VERBOSE = True
 LOGDIR = 'log'
 LOGFILE = 'firemap.log'
 
-# Simple logging to file
 log = logging.getLogger('blmfire')
 log.setLevel(logging.DEBUG)
-logto = os.path.join(PROJECTPATH, LOGDIR, LOGFILE)
-handler = logging.handlers.TimedRotatingFileHandler(filename=logto, when='D', interval=1, backupCount=20)
-console = logging.StreamHandler()
-if VERBOSE:
-    handler.setLevel(logging.DEBUG)
-else:
-    handler.setLevel(logging.WARNING)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
 
-def get_raw_fire_data():
+def get_raw_fire_data(firefile=FIREFILE, tryremote=True):
     """
     Returns list of lines from BLM, either from file or URL
     """
     log.info("Attempting to retrieve data from file...")
     try:
-        filehandle = open(FIREFILE, encoding='utf-8')
+        filehandle = open(firefile, encoding='utf-8')
         data = filehandle.read()
         if len(data) == 0:
             raise(IOError("Empty file."))
         log.info("...success!")
     except IOError as detail:
-        log.warning("Could not open %s: %s" % (FIREFILE, detail))
-        log.info("Attempting to retrieve URL for fire data...")
-        filehandle = urllib.request.urlopen(FIREURL)
-        data = filehandle.read().decode('utf-8')
-        log.info("...success!")
+        if tryremote:
+            log.warning("Could not open %s: %s" % (FIREFILE, detail))
+            log.info("Attempting to retrieve URL for fire data...")
+            filehandle = urllib.request.urlopen(FIREURL)
+            data = filehandle.read().decode('utf-8')
+            log.info("...success!")
+        else:
+            log.error("Could not open %s: %s" % (FIREFILE, detail))
+            sys.exit("Exiting...")
     
     return data.splitlines()
 
@@ -140,13 +133,17 @@ def select_relevant_values(dictlist):
                 firedata[field] = None
         if not firedata['acreage']:
             firedata['acreage'] = 0
+        lastupdateddt = datetime.fromtimestamp(
+            int(item['firesadmin.fire.lastupdatetime'])//1000)
         firedata['lastupdated'] = datetime.strftime(
-            datetime.fromtimestamp(int(item['firesadmin.fire.lastupdatetime'])//1000), '%d %b %Y, %H:%M'
-        )
+            lastupdateddt, '%d %b %Y, %H:%M')
+        firedata['current'] = 'true'
+        if ((datetime.now() - lastupdateddt).days > 8):
+            firedata['current'] = 'false'
+        discoverdt = datetime.fromtimestamp(
+            int(item['firesadmin.fire.discoverydatetime'])//1000)
         firedata['discovered'] = datetime.strftime(
-            datetime.fromtimestamp(int(item['firesadmin.fire.discoverydatetime'])//1000), '%d %b %Y, %H:%M'
-        )
-#        extratext = ''
+            discoverdt, '%d %b %Y, %H:%M')
         firevalues.append(firedata)
     log.info("Generated Google Maps JavaScript for %d current fires." % len(firevalues))
     return firevalues
@@ -183,7 +180,8 @@ def deploy_map(filename=HTMLOUT, location=SITELOCATION):
     """
     Copies generated file to live file system location of web site
     """
-    log.info("Attempting to deploy file %s to location %s." % (filename, location))
+    log.info("Attempting to deploy file %s to location %s." % 
+            (filename, location))
     filename = os.path.join(PROJECTPATH, filename) 
     try:
         shutil.copy(filename, location)
@@ -191,15 +189,29 @@ def deploy_map(filename=HTMLOUT, location=SITELOCATION):
     except Exception as detail:
         log.error("Copy operation failed: %s" % detail)
         exit(1)
-        
 
 def main():
 
+    # Simple logging to file
+    logto = os.path.join(PROJECTPATH, LOGDIR, LOGFILE)
+    handler = logging.handlers.TimedRotatingFileHandler(
+        filename=logto, when='D', interval=1, backupCount=20)
+    console = logging.StreamHandler()
+    if VERBOSE:
+        handler.setLevel(logging.DEBUG)
+    else:
+        handler.setLevel(logging.WARNING)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    
     # change into working directory and get data
     os.chdir(PROJECTPATH)
     data = get_raw_fire_data()
     fieldnames = sanitize_dataline(data[0], blanks=3, lower=True)
-    rawdata = [sanitize_dataline(item.strip(), blanks=2, lower=False) for item in data[1::2]]
+    rawdata = [sanitize_dataline(
+                item.strip(), blanks=2, lower=False) for item in data[1::2]]
     
     # the transformed data will be a list of dictionaries
     data = get_firedata(fieldnames, rawdata)

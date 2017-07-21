@@ -4,6 +4,7 @@
 		acreage: %(acreage)s,
 		maintext: "%(maintext)s",
 		lastupdated: "%(lastupdated)s",
-		discovered: "%(discovered)s"		
+		discovered: "%(discovered)s",
+		current: %(current)s
 	};
 	firemap.push(fire);

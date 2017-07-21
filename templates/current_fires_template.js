@@ -10,7 +10,14 @@ $(document).ready(function(){
 	// we would like circles for the larger fires, and markers for all
 	var fireCircle;
 	var fireMarker;
-	function getIcon(acreage) {
+	function getIcon(acreage, current=true) {
+        if (current === false) { 
+             if (acreage < 10) {
+                 'images/mm_20_grey.png';
+             } else {
+                 return 'images/ltgrey-dot.png';
+             }
+        }
 	    if (acreage < 10) { return 'images/mm_20_blue.png'; }
 	    else if (acreage < 250) { return 'images/ltblue-dot.png'; }
 	    else if (acreage < 2500) { return 'images/yellow-dot.png'; }
@@ -66,7 +73,7 @@ $(document).ready(function(){
 			    map: map,
 			    title: firemap[fire].designation,
 				html: contentString,
-				icon: getIcon(firemap[fire].acreage)
+				icon: getIcon(firemap[fire].acreage, firemap[fire].current)
 			});
 			google.maps.event.addListener(fireMarker, 'click', function() {
 				infowindow.setContent(this.html);
