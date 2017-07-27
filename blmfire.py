@@ -62,11 +62,11 @@ def get_raw_fire_data(firefile=FIREFILE, tryremote=True):
     """
     log.info("Attempting to retrieve data from file...")
     try:
-        filehandle = open(firefile, encoding='utf-8')
-        data = filehandle.read()
-        if len(data) == 0:
-            raise(IOError("Empty file."))
-        log.info("...success!")
+        with open(firefile, encoding='utf-8') as filehandle:
+            data = filehandle.read()
+            if len(data) == 0:
+                raise(IOError("Empty file."))
+                log.info("...success!")
     except IOError as detail:
         if tryremote:
             log.warning("Could not open %s: %s" % (FIREFILE, detail))
@@ -76,8 +76,6 @@ def get_raw_fire_data(firefile=FIREFILE, tryremote=True):
             log.info("...success!")
         else:
             log.error("Could not open %s: %s" % (FIREFILE, detail))
-            sys.exit("Exiting...")
-    
     return data.splitlines()
 
 def sanitize_dataline(rawstring, blanks=2, quotechars='"_', lower=False):
