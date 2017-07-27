@@ -103,4 +103,11 @@ ENV/
 # specific
 archive/
 log/
+firesforwrf/
 .DS_Store
+test*
+aiccfilelist.txt
+*.pickle
+filelist.txt
+current.csv
+
