@@ -6,7 +6,7 @@ if [ $# -ge 1 ]; then
 	FILES=$1
 fi
 
-rsync -rldpvz --dry-run ./firesforwrf/$FILES cwaigl@chinook.alaska.edu:/center1/d/UAFSMOKE/dat/fires_data/FIRMS_MODIS/
+rsync -rldpvz --update --dry-run ./firesforwrf/$FILES cwaigl@chinook.alaska.edu:/center1/d/UAFSMOKE/dat/fires_data/FIRMS_MODIS/
 
 read -p "Continue uploading files (y/N)? " confirm
 if [ "$confirm" != "y" ]; then
@@ -14,4 +14,4 @@ if [ "$confirm" != "y" ]; then
     exit 1
 fi
 
-rsync -rldpvz ./firesforwrf/$FILES cwaigl@chinook.alaska.edu:/center1/d/UAFSMOKE/dat/fires_data/FIRMS_MODIS/
+rsync -rldpvz --update ./firesforwrf/$FILES cwaigl@chinook.alaska.edu:/center1/d/UAFSMOKE/dat/fires_data/FIRMS_MODIS/
